@@ -94,7 +94,8 @@ class SessionManager {
       const jsonString = JSON.stringify(cleanData);
       console.log('JSON string length:', jsonString.length);
       
-      const encodedData = btoa(jsonString);
+      // Fix for UTF-8 characters (like Chinese characters)
+      const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
       console.log('Encoded data length:', encodedData.length);
       console.log('First 100 chars of encoded data:', encodedData.substring(0, 100));
       
@@ -119,7 +120,8 @@ class SessionManager {
     
     if (encodedData) {
       try {
-        const decodedData = JSON.parse(atob(encodedData));
+        // Fix for UTF-8 characters (like Chinese characters)
+        const decodedData = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
         console.log('Decoded data:', decodedData);
         // 验证数据结构
         if (decodedData.sessionId && decodedData.user1) {
