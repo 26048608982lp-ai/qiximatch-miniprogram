@@ -72,6 +72,39 @@ class SessionManager {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('session');
   }
+
+  getShareableLinkWithData(sessionData: SessionData): string {
+    const baseUrl = window.location.origin;
+    const encodedData = btoa(JSON.stringify(sessionData));
+    return `${baseUrl}?data=${encodedData}`;
+  }
+
+  getSessionDataFromUrl(): SessionData | null {
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedData = urlParams.get('data');
+    if (encodedData) {
+      try {
+        const decodedData = JSON.parse(atob(encodedData));
+        // 验证数据结构
+        if (decodedData.sessionId && decodedData.user1) {
+          return decodedData;
+        }
+      } catch (error) {
+        console.error('Failed to decode session data:', error);
+      }
+    }
+    return null;
+  }
+
+  getReportLink(sessionId: string): string {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}?report=${sessionId}`;
+  }
+
+  getReportIdFromUrl(): string | null {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('report');
+  }
 }
 
 const sessionManager = new SessionManager();

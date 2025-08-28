@@ -20,7 +20,43 @@ const App: React.FC = () => {
   const engine = useMemo(() => new MatchingEngine(), []);
 
   useEffect(() => {
-    // Check for existing session from URL or localStorage
+    // 优先检查URL数据参数
+    const sessionDataFromUrl = SessionManager.getSessionDataFromUrl();
+    if (sessionDataFromUrl) {
+      setSessionData(sessionDataFromUrl);
+      setSessionId(sessionDataFromUrl.sessionId);
+      
+      if (sessionDataFromUrl.user1 && sessionDataFromUrl.user2) {
+        // 两个用户都完成了，显示结果
+        const result = engine.calculateMatch(sessionDataFromUrl.user1.interests, sessionDataFromUrl.user2.interests);
+        setMatchResult(result);
+        setUser1Name(sessionDataFromUrl.user1.name);
+        setUser2Name(sessionDataFromUrl.user2.name);
+        setStage('results');
+      } else if (sessionDataFromUrl.user1) {
+        // 用户1完成了，用户2需要输入名字并完成
+        setUser1Name(sessionDataFromUrl.user1.name);
+        setUser1Interests(sessionDataFromUrl.user1.interests);
+        setStage('enterName');
+      }
+      return;
+    }
+    
+    // 检查报告链接
+    const reportId = SessionManager.getReportIdFromUrl();
+    if (reportId) {
+      const savedSession = SessionManager.loadSession();
+      if (savedSession && savedSession.sessionId === reportId && savedSession.user1 && savedSession.user2) {
+        const result = engine.calculateMatch(savedSession.user1.interests, savedSession.user2.interests);
+        setMatchResult(result);
+        setUser1Name(savedSession.user1.name);
+        setUser2Name(savedSession.user2.name);
+        setStage('results');
+        return;
+      }
+    }
+    
+    // 检查现有的session从URL或localStorage
     const urlSessionId = SessionManager.getSessionIdFromUrl();
     const savedSession = SessionManager.loadSession();
     
@@ -29,14 +65,14 @@ const App: React.FC = () => {
       setSessionData(savedSession);
       
       if (savedSession.user1 && savedSession.user2) {
-        // Both users completed, show results
+        // 两个用户都完成了，显示结果
         const result = engine.calculateMatch(savedSession.user1.interests, savedSession.user2.interests);
         setMatchResult(result);
         setUser1Name(savedSession.user1.name);
         setUser2Name(savedSession.user2.name);
         setStage('results');
       } else if (savedSession.user1) {
-        // User 1 completed, user 2 needs to enter name and complete
+        // 用户1完成了，用户2需要输入名字并完成
         setUser1Name(savedSession.user1.name);
         setUser1Interests(savedSession.user1.interests);
         setStage('enterName');
@@ -90,9 +126,9 @@ const App: React.FC = () => {
   };
 
   const copyShareLink = async () => {
-    if (!sessionId) return;
+    if (!sessionData) return;
     
-    const shareLink = SessionManager.getShareableLink(sessionId);
+    const shareLink = SessionManager.getShareableLinkWithData(sessionData);
     try {
       await navigator.clipboard.writeText(shareLink);
       alert('分享链接已复制到剪贴板！');
@@ -102,11 +138,11 @@ const App: React.FC = () => {
   };
 
   const copyResultsLink = async () => {
-    if (!sessionId) return;
+    if (!sessionData) return;
     
-    const resultsLink = SessionManager.getShareableLink(sessionId);
+    const reportLink = SessionManager.getReportLink(sessionData.sessionId);
     try {
-      await navigator.clipboard.writeText(resultsLink);
+      await navigator.clipboard.writeText(reportLink);
       alert('结果链接已复制到剪贴板！可以分享给对方查看匹配结果。');
     } catch (err) {
       console.error('Failed to copy: ', err);
@@ -239,7 +275,7 @@ const App: React.FC = () => {
         <div className="bg-white/20 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
           <p className="text-white/60 text-xs sm:text-sm mb-2">分享链接</p>
           <p className="text-white text-xs sm:text-sm break-all">
-            {SessionManager.getShareableLink(sessionId)}
+            {sessionData ? SessionManager.getShareableLinkWithData(sessionData) : ''}
           </p>
         </div>
         

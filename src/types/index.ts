@@ -19,6 +19,7 @@ export interface SessionData {
   user1: UserSelection | null;
   user2: UserSelection | null;
   createdAt: number;
+  matchResult?: MatchResult;
 }
 
 export interface MatchResult {
