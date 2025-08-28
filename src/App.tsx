@@ -62,11 +62,21 @@ const App: React.FC = () => {
         setUser2Name(sessionDataFromUrl.user2.name);
         setStage('results');
       } else if (sessionDataFromUrl.user1) {
-        // 用户1完成了，用户2需要输入名字并完成
-        console.log('User 1 completed, showing enter name...');
+        // 用户1完成了，检查是否有用户2的名字
+        console.log('User 1 completed, checking for user2 name...');
         setUser1Name(sessionDataFromUrl.user1.name);
         setUser1Interests(sessionDataFromUrl.user1.interests);
-        setStage('enterName');
+        
+        // 如果URL中已经有user2Name，直接进入用户2的选择界面
+        if (sessionDataFromUrl.user2Name) {
+          console.log('Found user2Name in URL:', sessionDataFromUrl.user2Name);
+          setUser2Name(sessionDataFromUrl.user2Name);
+          setStage('user2');
+        } else {
+          // 否则需要输入用户2的名字
+          console.log('No user2Name found, showing enter name...');
+          setStage('enterName');
+        }
       }
       return;
     } else {
@@ -131,18 +141,37 @@ const App: React.FC = () => {
   };
 
   const handleUser2Complete = (interests: Interest[]) => {
-    if (!sessionData) return;
+    console.log('handleUser2Complete called');
+    console.log('Current sessionData:', sessionData);
+    console.log('User2 name:', user2Name);
+    console.log('User2 interests:', interests);
     
-    const user2Selection = SessionManager.createUserSelection('user2', user2Name, interests);
-    const updatedSession = SessionManager.updateSessionWithUser(sessionData, 2, user2Selection);
+    if (!sessionData) {
+      console.error('❌ No session data available');
+      return;
+    }
     
-    setSessionData(updatedSession);
-    setUser2Interests(interests);
-    SessionManager.saveSession(updatedSession);
-    
-    const result = engine.calculateMatch(sessionData.user1!.interests, interests);
-    setMatchResult(result);
-    setStage('results');
+    try {
+      const user2Selection = SessionManager.createUserSelection('user2', user2Name, interests);
+      console.log('✅ Created user2 selection:', user2Selection);
+      
+      const updatedSession = SessionManager.updateSessionWithUser(sessionData, 2, user2Selection);
+      console.log('✅ Updated session:', updatedSession);
+      
+      setSessionData(updatedSession);
+      setUser2Interests(interests);
+      SessionManager.saveSession(updatedSession);
+      
+      // 使用更新后的session数据计算匹配结果
+      const result = engine.calculateMatch(updatedSession.user1!.interests, interests);
+      console.log('✅ Calculated match result:', result);
+      
+      setMatchResult(result);
+      setStage('results');
+      console.log('✅ Moved to results stage');
+    } catch (error) {
+      console.error('❌ Error in handleUser2Complete:', error);
+    }
   };
 
   const resetApp = () => {

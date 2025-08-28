@@ -76,6 +76,15 @@ class SessionManager {
   getShareableLinkWithData(sessionData: SessionData): string {
     console.log('SessionManager: getShareableLinkWithData called');
     console.log('Session data input:', sessionData);
+    console.log('Session data structure:', {
+      hasSessionId: !!sessionData.sessionId,
+      hasUser1: !!sessionData.user1,
+      hasUser2: !!sessionData.user2,
+      hasUser2Name: !!sessionData.user2Name,
+      user1Name: sessionData.user1?.name,
+      user2Name: sessionData.user2Name,
+      sessionId: sessionData.sessionId
+    });
     
     try {
       const baseUrl = window.location.origin;
@@ -89,50 +98,81 @@ class SessionManager {
         user2Name: sessionData.user2Name,
         createdAt: sessionData.createdAt
       };
-      console.log('Clean data:', cleanData);
+      console.log('✅ Clean data prepared:', cleanData);
       
       const jsonString = JSON.stringify(cleanData);
-      console.log('JSON string length:', jsonString.length);
+      console.log('✅ JSON string length:', jsonString.length);
+      console.log('JSON string preview:', jsonString.substring(0, 200));
       
       // Fix for UTF-8 characters (like Chinese characters)
       const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
-      console.log('Encoded data length:', encodedData.length);
+      console.log('✅ Encoded data length:', encodedData.length);
       console.log('First 100 chars of encoded data:', encodedData.substring(0, 100));
       
       const finalUrl = `${baseUrl}?data=${encodedData}`;
-      console.log('Final URL:', finalUrl);
+      console.log('✅ Final URL generated:', finalUrl);
+      console.log('URL contains data parameter:', finalUrl.includes('?data='));
       
       return finalUrl;
     } catch (error) {
-      console.error('Failed to encode session data:', error);
+      console.error('❌ Failed to encode session data:', error);
       console.error('Error details:', error);
       // Fallback to session ID only
-      console.log('Using fallback to session ID only');
+      console.log('⚠️ Using fallback to session ID only');
       return this.getShareableLink(sessionData.sessionId);
     }
   }
 
   getSessionDataFromUrl(): SessionData | null {
     console.log('SessionManager: getSessionDataFromUrl called');
+    console.log('Full URL:', window.location.href);
+    console.log('URL search:', window.location.search);
+    
     const urlParams = new URLSearchParams(window.location.search);
     const encodedData = urlParams.get('data');
     console.log('Encoded data from URL:', encodedData);
     
     if (encodedData) {
       try {
+        console.log('Attempting to decode data...');
+        console.log('Encoded data length:', encodedData.length);
+        
         // Fix for UTF-8 characters (like Chinese characters)
         const decodedData = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
-        console.log('Decoded data:', decodedData);
+        console.log('Successfully decoded data:', decodedData);
+        console.log('Decoded data structure:', {
+          hasSessionId: !!decodedData.sessionId,
+          hasUser1: !!decodedData.user1,
+          hasUser2: !!decodedData.user2,
+          hasUser2Name: !!decodedData.user2Name,
+          hasMatchResult: !!decodedData.matchResult,
+          user1Name: decodedData.user1?.name,
+          user2Name: decodedData.user2Name,
+          sessionId: decodedData.sessionId
+        });
         
         // 更灵活的数据验证 - 只要包含基本结构就接受
         if (decodedData && (decodedData.sessionId || decodedData.user1 || decodedData.user2)) {
-          console.log('Data validation passed, returning session data');
-          return decodedData;
+          console.log('✅ Data validation passed, returning session data');
+          
+          // 确保数据结构完整
+          const normalizedData: SessionData = {
+            sessionId: decodedData.sessionId || this.generateSessionId(),
+            user1: decodedData.user1 || null,
+            user2: decodedData.user2 || null,
+            user2Name: decodedData.user2Name || '',
+            createdAt: decodedData.createdAt || Date.now(),
+            matchResult: decodedData.matchResult || undefined
+          };
+          
+          console.log('✅ Normalized data:', normalizedData);
+          return normalizedData;
         } else {
-          console.log('Data validation failed - missing basic session structure');
+          console.log('❌ Data validation failed - missing basic session structure');
+          console.log('Available keys:', Object.keys(decodedData));
         }
       } catch (error) {
-        console.error('Failed to decode session data:', error);
+        console.error('❌ Failed to decode session data:', error);
         console.log('Raw encoded data length:', encodedData.length);
         try {
           console.log('First 100 chars of encoded data:', encodedData.substring(0, 100));
@@ -140,6 +180,9 @@ class SessionManager {
           console.log('Could not log encoded data');
         }
       }
+    } else {
+      console.log('❌ No encoded data found in URL parameters');
+      console.log('Available URL parameters:', Array.from(urlParams.keys()));
     }
     return null;
   }
