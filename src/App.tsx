@@ -88,6 +88,7 @@ const App: React.FC = () => {
       sessionId: newSessionId,
       user1: user1Selection,
       user2: null,
+      user2Name: user2Name, // 保存用户B的名字
       createdAt: Date.now()
     };
     
@@ -126,14 +127,19 @@ const App: React.FC = () => {
   };
 
   const copyShareLink = async () => {
-    if (!sessionData) return;
+    if (!sessionData) {
+      alert('没有可分享的数据');
+      return;
+    }
     
-    const shareLink = SessionManager.getShareableLinkWithData(sessionData);
     try {
+      const shareLink = SessionManager.getShareableLinkWithData(sessionData);
+      console.log('Generated share link:', shareLink);
       await navigator.clipboard.writeText(shareLink);
       alert('分享链接已复制到剪贴板！');
     } catch (err) {
-      console.error('Failed to copy: ', err);
+      console.error('Failed to copy share link: ', err);
+      alert('复制分享链接失败，请手动复制链接');
     }
   };
 
@@ -263,40 +269,70 @@ const App: React.FC = () => {
     </div>
   );
 
-  const renderShare = () => (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6">
-      <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 sm:p-8 shadow-xl max-w-md w-full text-center">
-        <div className="text-4xl sm:text-6xl mb-4 sm:mb-6">📱</div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">分享给 {user2Name}</h1>
-        <p className="text-sm sm:text-base text-white/80 mb-4 sm:mb-6">
-          {user1Name} 已经完成了选择，请分享下面的链接给 {user2Name} 填写。
-        </p>
-        
-        <div className="bg-white/20 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
-          <p className="text-white/60 text-xs sm:text-sm mb-2">分享链接</p>
-          <p className="text-white text-xs sm:text-sm break-all">
-            {sessionData ? SessionManager.getShareableLinkWithData(sessionData) : ''}
-          </p>
+  const renderShare = () => {
+    if (!sessionData || !user1Name) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4 sm:p-6">
+          <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 sm:p-8 shadow-xl max-w-md w-full text-center">
+            <div className="text-4xl sm:text-6xl mb-4 sm:mb-6">❌</div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">数据丢失</h1>
+            <p className="text-sm sm:text-base text-white/80 mb-4 sm:mb-6">
+              分享数据丢失，请重新开始。
+            </p>
+            <button
+              onClick={resetApp}
+              className="w-full bg-gradient-to-r from-qixi-pink to-qixi-purple text-white py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:from-qixi-pink/80 hover:to-qixi-purple/80 transition-all duration-300"
+            >
+              重新开始
+            </button>
+          </div>
         </div>
-        
-        <div className="space-y-2 sm:space-y-3">
-          <button
-            onClick={copyShareLink}
-            className="w-full bg-gradient-to-r from-qixi-pink to-qixi-purple text-white py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:from-qixi-pink/80 hover:to-qixi-purple/80 transition-all duration-300"
-          >
-            复制分享链接
-          </button>
+      );
+    }
+
+    let shareLink = '';
+    try {
+      shareLink = SessionManager.getShareableLinkWithData(sessionData);
+    } catch (error) {
+      console.error('Failed to generate share link:', error);
+    }
+
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6">
+        <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 sm:p-8 shadow-xl max-w-md w-full text-center">
+          <div className="text-4xl sm:text-6xl mb-4 sm:mb-6">📱</div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4">分享给 {sessionData?.user2Name || user2Name}</h1>
+          <p className="text-sm sm:text-base text-white/80 mb-4 sm:mb-6">
+            {user1Name} 已经完成了选择，请分享下面的链接给 {sessionData?.user2Name || user2Name} 填写。
+          </p>
           
-          <button
-            onClick={() => setStage('enterName')}
-            className="w-full bg-white/20 text-white py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:bg-white/30 transition-all duration-300"
-          >
-            我就是 {user2Name}，开始填写
-          </button>
+          <div className="bg-white/20 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <p className="text-white/60 text-xs sm:text-sm mb-2">分享链接</p>
+            <p className="text-white text-xs sm:text-sm break-all">
+              {shareLink || '链接生成失败'}
+            </p>
+          </div>
+          
+          <div className="space-y-2 sm:space-y-3">
+            <button
+              onClick={copyShareLink}
+              disabled={!shareLink}
+              className="w-full bg-gradient-to-r from-qixi-pink to-qixi-purple text-white py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:from-qixi-pink/80 hover:to-qixi-purple/80 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              复制分享链接
+            </button>
+            
+            <button
+              onClick={() => setStage('enterName')}
+              className="w-full bg-white/20 text-white py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:bg-white/30 transition-all duration-300"
+            >
+              我就是 {sessionData?.user2Name || user2Name}，开始填写
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen">

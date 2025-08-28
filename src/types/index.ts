@@ -18,6 +18,7 @@ export interface SessionData {
   sessionId: string;
   user1: UserSelection | null;
   user2: UserSelection | null;
+  user2Name?: string; // 保存用户B的名字，用于分享页面显示
   createdAt: number;
   matchResult?: MatchResult;
 }
