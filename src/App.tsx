@@ -21,13 +21,21 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // 优先检查URL数据参数
+    console.log('Checking URL data...');
+    console.log('Current URL:', window.location.href);
+    console.log('URL search:', window.location.search);
+    
     const sessionDataFromUrl = SessionManager.getSessionDataFromUrl();
+    console.log('Session data from URL:', sessionDataFromUrl);
+    
     if (sessionDataFromUrl) {
+      console.log('Found session data from URL, setting state...');
       setSessionData(sessionDataFromUrl);
       setSessionId(sessionDataFromUrl.sessionId);
       
       if (sessionDataFromUrl.user1 && sessionDataFromUrl.user2) {
         // 两个用户都完成了，显示结果
+        console.log('Both users completed, showing results...');
         const result = engine.calculateMatch(sessionDataFromUrl.user1.interests, sessionDataFromUrl.user2.interests);
         setMatchResult(result);
         setUser1Name(sessionDataFromUrl.user1.name);
@@ -35,11 +43,14 @@ const App: React.FC = () => {
         setStage('results');
       } else if (sessionDataFromUrl.user1) {
         // 用户1完成了，用户2需要输入名字并完成
+        console.log('User 1 completed, showing enter name...');
         setUser1Name(sessionDataFromUrl.user1.name);
         setUser1Interests(sessionDataFromUrl.user1.interests);
         setStage('enterName');
       }
       return;
+    } else {
+      console.log('No session data found in URL');
     }
     
     // 检查报告链接

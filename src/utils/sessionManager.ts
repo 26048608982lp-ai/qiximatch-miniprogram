@@ -94,17 +94,30 @@ class SessionManager {
   }
 
   getSessionDataFromUrl(): SessionData | null {
+    console.log('SessionManager: getSessionDataFromUrl called');
     const urlParams = new URLSearchParams(window.location.search);
     const encodedData = urlParams.get('data');
+    console.log('Encoded data from URL:', encodedData);
+    
     if (encodedData) {
       try {
         const decodedData = JSON.parse(atob(encodedData));
+        console.log('Decoded data:', decodedData);
         // 验证数据结构
         if (decodedData.sessionId && decodedData.user1) {
+          console.log('Data validation passed, returning session data');
           return decodedData;
+        } else {
+          console.log('Data validation failed - missing sessionId or user1');
         }
       } catch (error) {
         console.error('Failed to decode session data:', error);
+        console.log('Raw encoded data length:', encodedData.length);
+        try {
+          console.log('First 100 chars of encoded data:', encodedData.substring(0, 100));
+        } catch (e) {
+          console.log('Could not log encoded data');
+        }
       }
     }
     return null;
