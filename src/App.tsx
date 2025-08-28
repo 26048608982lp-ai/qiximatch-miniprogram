@@ -155,8 +155,13 @@ const App: React.FC = () => {
       const user2Selection = SessionManager.createUserSelection('user2', user2Name, interests);
       console.log('✅ Created user2 selection:', user2Selection);
       
-      const updatedSession = SessionManager.updateSessionWithUser(sessionData, 2, user2Selection);
-      console.log('✅ Updated session:', updatedSession);
+      // 更新sessionData，确保包含user2Name
+      const updatedSession = {
+        ...sessionData,
+        user2: user2Selection,
+        user2Name: user2Name // 确保 user2Name 被正确保存
+      };
+      console.log('✅ Updated session with user2Name:', updatedSession);
       
       setSessionData(updatedSession);
       setUser2Interests(interests);
@@ -212,20 +217,51 @@ const App: React.FC = () => {
   };
 
   const copyResultsLink = async () => {
-    if (!sessionData || !matchResult) return;
+    console.log('copyResultsLink called');
+    console.log('Current sessionData:', sessionData);
+    console.log('Current matchResult:', matchResult);
+    console.log('Current user1Name:', user1Name);
+    console.log('Current user2Name:', user2Name);
+    
+    if (!sessionData || !matchResult) {
+      console.error('❌ Missing session data or match result');
+      alert('没有可分享的结果数据');
+      return;
+    }
     
     try {
-      // 将匹配结果添加到会话数据中
-      const sessionDataWithResult = {
+      // 确保sessionData包含完整的用户信息
+      const completeSessionData = {
         ...sessionData,
+        user1: sessionData.user1,
+        user2: sessionData.user2,
+        user2Name: sessionData.user2Name || user2Name, // 使用状态中的user2Name作为备用
         matchResult: matchResult
       };
       
-      const reportLink = SessionManager.getShareableLinkWithData(sessionDataWithResult);
+      console.log('✅ Complete session data for sharing:', completeSessionData);
+      
+      // 验证数据完整性
+      if (!completeSessionData.user1 || !completeSessionData.user2) {
+        console.error('❌ Incomplete user data in session');
+        alert('分享数据不完整，请重新完成匹配');
+        return;
+      }
+      
+      if (!completeSessionData.user2Name) {
+        console.error('❌ Missing user2Name in session data');
+        alert('缺少用户B姓名信息');
+        return;
+      }
+      
+      const reportLink = SessionManager.getShareableLinkWithData(completeSessionData);
+      console.log('✅ Generated report link:', reportLink);
+      
       await navigator.clipboard.writeText(reportLink);
+      console.log('✅ Report link copied to clipboard');
       alert('结果链接已复制到剪贴板！可以分享给对方查看匹配结果。');
     } catch (err) {
-      console.error('Failed to copy: ', err);
+      console.error('❌ Failed to copy results link: ', err);
       alert('复制结果链接失败，请手动复制链接');
     }
   };

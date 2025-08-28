@@ -151,11 +151,43 @@ class SessionManager {
           sessionId: decodedData.sessionId
         });
         
-        // 更灵活的数据验证 - 只要包含基本结构就接受
-        if (decodedData && (decodedData.sessionId || decodedData.user1 || decodedData.user2)) {
-          console.log('✅ Data validation passed, returning session data');
+        // 严格的数据验证 - 确保包含必要的字段
+        if (decodedData && decodedData.user1 && decodedData.user2 && decodedData.matchResult) {
+          console.log('✅ Complete match result data validation passed');
           
           // 确保数据结构完整
+          const normalizedData: SessionData = {
+            sessionId: decodedData.sessionId || this.generateSessionId(),
+            user1: decodedData.user1,
+            user2: decodedData.user2,
+            user2Name: decodedData.user2Name || decodedData.user2?.name || '',
+            createdAt: decodedData.createdAt || Date.now(),
+            matchResult: decodedData.matchResult
+          };
+          
+          console.log('✅ Normalized match result data:', normalizedData);
+          return normalizedData;
+        } 
+        // 部分数据验证 - 只有用户1完成了
+        else if (decodedData && decodedData.user1 && !decodedData.user2) {
+          console.log('✅ Partial data validation passed - User1 completed');
+          
+          const normalizedData: SessionData = {
+            sessionId: decodedData.sessionId || this.generateSessionId(),
+            user1: decodedData.user1,
+            user2: null,
+            user2Name: decodedData.user2Name || '',
+            createdAt: decodedData.createdAt || Date.now(),
+            matchResult: undefined
+          };
+          
+          console.log('✅ Normalized partial data:', normalizedData);
+          return normalizedData;
+        }
+        // 基本结构验证
+        else if (decodedData && (decodedData.sessionId || decodedData.user1 || decodedData.user2)) {
+          console.log('✅ Basic structure validation passed');
+          
           const normalizedData: SessionData = {
             sessionId: decodedData.sessionId || this.generateSessionId(),
             user1: decodedData.user1 || null,
@@ -165,7 +197,7 @@ class SessionManager {
             matchResult: decodedData.matchResult || undefined
           };
           
-          console.log('✅ Normalized data:', normalizedData);
+          console.log('✅ Normalized basic data:', normalizedData);
           return normalizedData;
         } else {
           console.log('❌ Data validation failed - missing basic session structure');
