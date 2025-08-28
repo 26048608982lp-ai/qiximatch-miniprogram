@@ -1,0 +1,501 @@
+/* 结果页面样式 */
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(40rpx);
+  transition: all 0.6s ease;
+}
+
+.container.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 背景装饰 */
+.bg-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.floating-heart {
+  position: absolute;
+  font-size: 32rpx;
+  opacity: 0.4;
+  animation: float-up 8s ease-in-out infinite;
+}
+
+.heart-1 {
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.heart-2 {
+  top: 20%;
+  right: 15%;
+  animation-delay: 2s;
+}
+
+.heart-3 {
+  bottom: 30%;
+  left: 20%;
+  animation-delay: 4s;
+}
+
+.heart-4 {
+  bottom: 20%;
+  right: 10%;
+  animation-delay: 6s;
+}
+
+@keyframes float-up {
+  0%, 100% { 
+    transform: translateY(0px) rotate(0deg); 
+    opacity: 0.4;
+  }
+  50% { 
+    transform: translateY(-30rpx) rotate(10deg); 
+    opacity: 0.6;
+  }
+}
+
+/* 主要内容 */
+.main-content {
+  position: relative;
+  z-index: 2;
+  padding: 100rpx 32rpx 40rpx 32rpx;
+  min-height: 100vh;
+}
+
+/* 头部信息 */
+.header {
+  text-align: center;
+  margin-bottom: 60rpx;
+}
+
+.page-title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 16rpx;
+}
+
+.user-names {
+  font-size: 32rpx;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 匹配度总览 */
+.match-overview {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 24rpx;
+  padding: 40rpx;
+  margin-bottom: 40rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  text-align: center;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all 0.6s ease;
+}
+
+.match-overview.scale-in {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.score-container {
+  margin-bottom: 40rpx;
+}
+
+.score-label {
+  display: block;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 16rpx;
+}
+
+.score-value {
+  display: block;
+  font-size: 120rpx;
+  font-weight: bold;
+  color: #ffe66d;
+  text-shadow: 0 0 20rpx rgba(255, 230, 109, 0.5);
+  margin-bottom: 16rpx;
+  line-height: 1;
+}
+
+.match-level {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #ff6b9d;
+}
+
+/* 分类匹配度 */
+.category-scores {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24rpx;
+  opacity: 0;
+  transform: translateY(40rpx);
+  transition: all 0.6s ease;
+}
+
+.category-scores.slide-up {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.category-score {
+  text-align: center;
+}
+
+.category-name {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8rpx;
+}
+
+.category-value {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #ffffff;
+  margin-bottom: 12rpx;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4rpx;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6b9d, #c44569);
+  border-radius: 4rpx;
+  transition: width 1s ease;
+}
+
+/* 通用区块样式 */
+.section {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 24rpx;
+  padding: 40rpx;
+  margin-bottom: 40rpx;
+  border: 1rpx solid rgba(255, 255, 255, 0.2);
+  opacity: 0;
+  transform: translateY(40rpx);
+  transition: all 0.6s ease;
+}
+
+.section.slide-up {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 32rpx;
+}
+
+.section-icon {
+  font-size: 32rpx;
+}
+
+.section-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* 共同兴趣 */
+.interests-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+
+.interest-item {
+  background: rgba(255, 107, 157, 0.2);
+  border: 1rpx solid rgba(255, 107, 157, 0.3);
+  border-radius: 16rpx;
+  padding: 24rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  text-align: center;
+}
+
+.interest-icon {
+  font-size: 36rpx;
+}
+
+.interest-name {
+  font-size: 28rpx;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.interest-importance {
+  font-size: 24rpx;
+  color: #ffc107;
+  background: rgba(255, 193, 7, 0.2);
+  padding: 4rpx 8rpx;
+  border-radius: 8rpx;
+}
+
+/* 独特兴趣 */
+.unique-interests-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32rpx;
+}
+
+.unique-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.unique-user-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 16rpx;
+}
+
+.unique-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.unique-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 16rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12rpx;
+}
+
+.unique-icon {
+  font-size: 28rpx;
+}
+
+.unique-name {
+  font-size: 26rpx;
+  color: #ffffff;
+}
+
+/* 推荐活动 */
+.activities-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24rpx;
+}
+
+.activity-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 16rpx;
+  padding: 32rpx;
+  transition: all 0.3s ease;
+}
+
+.activity-card:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.activity-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.activity-score {
+  font-size: 24rpx;
+  color: #ffe66d;
+  background: rgba(255, 230, 109, 0.2);
+  padding: 8rpx 12rpx;
+  border-radius: 12rpx;
+  font-weight: 600;
+}
+
+.activity-description {
+  display: block;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.4;
+  margin-bottom: 20rpx;
+}
+
+.activity-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.activity-duration,
+.activity-cost {
+  font-size: 24rpx;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.activity-progress {
+  width: 100%;
+  height: 6rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3rpx;
+  overflow: hidden;
+}
+
+.activity-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffe66d, #ff6b9d);
+  border-radius: 3rpx;
+  transition: width 1s ease;
+}
+
+/* 操作按钮 */
+.actions-section {
+  opacity: 0;
+  transform: translateY(40rpx);
+  transition: all 0.6s ease;
+}
+
+.actions-section.slide-up {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.secondary-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 20rpx;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 28rpx 32rpx;
+  border-radius: 50rpx;
+  border: none;
+  font-size: 32rpx;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+  color: #ffffff;
+  box-shadow: 0 8rpx 32rpx rgba(255, 107, 157, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 16rpx rgba(255, 107, 157, 0.4);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1rpx solid rgba(255, 255, 255, 0.3);
+  flex: 1;
+}
+
+.btn-secondary:active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-icon {
+  font-size: 24rpx;
+}
+
+/* 空状态 */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+  padding: 40rpx;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 48rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  line-height: 1.4;
+}
+
+.empty-unique {
+  text-align: center;
+  padding: 40rpx;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* 响应式设计 */
+@media (max-width: 750rpx) {
+  .main-content {
+    padding: 80rpx 20rpx 40rpx 20rpx;
+  }
+  
+  .page-title {
+    font-size: 40rpx;
+  }
+  
+  .score-value {
+    font-size: 100rpx;
+  }
+  
+  .category-scores {
+    grid-template-columns: 1fr;
+  }
+  
+  .unique-interests-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .interests-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .secondary-actions {
+    flex-direction: column;
+  }
+}

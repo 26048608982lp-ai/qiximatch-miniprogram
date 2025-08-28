@@ -1,0 +1,110 @@
+<!-- 分享页面模板 -->
+<view class="container {{showContent ? 'fade-in' : ''}}">
+  <!-- 背景装饰 -->
+  <view class="bg-decoration">
+    <view class="heart heart-1 {{heartAnimation ? 'heart-animate' : ''}}">💕</view>
+    <view class="heart heart-2 {{heartAnimation ? 'heart-animate' : ''}}">💖</view>
+    <view class="heart heart-3 {{heartAnimation ? 'heart-animate' : ''}}">💗</view>
+  </view>
+
+  <!-- 主要内容 -->
+  <view class="main-content">
+    <!-- 头部信息 -->
+    <view class="header">
+      <view class="title-section">
+        <text class="main-title">分享给 {{user2Name}}</text>
+        <text class="subtitle">{{user1Name}} 已经完成了选择，现在分享给 {{user2Name}} 填写</text>
+      </view>
+      
+      <view class="header-actions">
+        <button class="btn btn-secondary" bindtap="goBack" size="mini">
+          <text class="btn-icon">⬅️</text>
+          返回
+        </button>
+        <button class="btn btn-secondary" bindtap="goHome" size="mini">
+          <text class="btn-icon">🏠</text>
+          首页
+        </button>
+      </view>
+    </view>
+
+    <!-- 分享卡片 -->
+    <view class="share-card">
+      <view class="card-header">
+        <text class="card-icon">📱</text>
+        <text class="card-title">分享链接</text>
+      </view>
+      
+      <view class="share-link-container">
+        <text class="share-link">{{shareLink}}</text>
+      </view>
+      
+      <view class="share-actions">
+        <button 
+          class="btn btn-primary"
+          bindtap="copyShareLink"
+          disabled="{{!shareLink}}"
+        >
+          <text class="btn-icon">📋</text>
+          复制链接
+        </button>
+      </view>
+    </view>
+
+    <!-- 分享方式 -->
+    <view class="share-methods {{showActions ? 'slide-up' : ''}}">
+      <text class="section-title">选择分享方式</text>
+      
+      <view class="methods-grid">
+        <view 
+          wx:for="{{shareMethods}}"
+          wx:key="id"
+          class="method-card"
+          data-method="{{item.id}}"
+          bindtap="handleShareMethod"
+        >
+          <view class="method-icon">{{item.icon}}</view>
+          <text class="method-name">{{item.name}}</text>
+          <text class="method-desc">{{item.description}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 快速操作 -->
+    <view class="quick-actions">
+      <button 
+        class="btn btn-outline btn-large"
+        bindtap="startFill"
+      >
+        <text class="btn-icon">✍️</text>
+        我就是 {{user2Name}}，开始填写
+      </button>
+      
+      <button 
+        class="btn btn-secondary"
+        bindtap="previewResults"
+      >
+        <text class="btn-icon">👀</text>
+        预览结果
+      </button>
+    </view>
+
+    <!-- 提示信息 -->
+    <view class="tips-section">
+      <view class="tip-item">
+        <text class="tip-icon">💡</text>
+        <text class="tip-text">分享后，{{user2Name}} 点击链接就能开始选择兴趣了</text>
+      </view>
+      
+      <view class="tip-item">
+        <text class="tip-icon">⏰</text>
+        <text class="tip-text">链接有效期为24小时，请尽快分享</text>
+      </view>
+      
+      <view class="tip-item">
+        <text class="tip-icon">🎯</text>
+        <text class="tip-text">双方完成后就能看到匹配结果和活动推荐</text>
+      </view>
+    </view>
+  </view>
+</view>

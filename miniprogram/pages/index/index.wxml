@@ -1,0 +1,124 @@
+<!-- 首页页面模板 -->
+<view class="container">
+  <!-- 背景装饰 -->
+  <view class="bg-decoration">
+    <view class="heart heart-1 {{heartAnimation ? 'heart-animate' : ''}}">💕</view>
+    <view class="heart heart-2 {{heartAnimation ? 'heart-animate' : ''}}">💖</view>
+    <view class="heart heart-3 {{heartAnimation ? 'heart-animate' : ''}}">💗</view>
+  </view>
+
+  <!-- 主要内容 -->
+  <view class="main-content {{showContent ? 'fade-in' : ''}}">
+    <!-- 标题区域 -->
+    <view class="header">
+      <view class="title-container">
+        <text class="main-title">七夕匹配</text>
+        <text class="subtitle">发现你们之间的兴趣匹配</text>
+      </view>
+    </view>
+
+    <!-- 输入区域 -->
+    <view class="input-section">
+      <view class="input-group">
+        <view class="input-label">
+          <text class="label-icon">👤</text>
+          <text class="label-text">你的名字</text>
+        </view>
+        <input 
+          class="input-field" 
+          placeholder="请输入你的名字" 
+          value="{{user1Name}}"
+          bindinput="onUser1NameInput"
+          maxlength="10"
+        />
+      </view>
+
+      <view class="input-group">
+        <view class="input-label">
+          <text class="label-icon">💑</text>
+          <text class="label-text">对方的名字</text>
+        </view>
+        <input 
+          class="input-field" 
+          placeholder="请输入对方的名字" 
+          value="{{user2Name}}"
+          bindinput="onUser2NameInput"
+          maxlength="10"
+        />
+      </view>
+    </view>
+
+    <!-- 当前会话状态 -->
+    <view wx:if="{{currentSession}}" class="session-status">
+      <view class="status-card">
+        <view class="status-header">
+          <text class="status-title">当前会话</text>
+          <text class="status-badge {{currentSession.status === 'completed' ? 'completed' : 'waiting'}}">
+            {{currentSession.status === 'completed' ? '已完成' : '进行中'}}
+          </text>
+        </view>
+        <view class="status-info">
+          <text class="status-text">{{currentSession.user1Name}} ❤️ {{currentSession.user2Name}}</text>
+          <text class="status-time">创建于 {{currentSession.createdAt}}</text>
+        </view>
+        <view class="status-actions">
+          <button 
+            class="btn btn-secondary" 
+            bindtap="clearSession"
+            size="mini"
+          >
+            清除记录
+          </button>
+          <button 
+            class="btn btn-primary" 
+            bindtap="startMatching"
+            size="mini"
+          >
+            {{currentSession.status === 'completed' ? '查看结果' : '继续填写'}}
+          </button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-section">
+      <button 
+        class="btn btn-primary btn-large {{isLoading ? 'loading' : ''}}"
+        bindtap="startMatching"
+        disabled="{{isLoading || !user1Name || !user2Name}}"
+      >
+        <text wx:if="{{!isLoading}}" class="btn-text">
+          {{currentSession ? '继续匹配' : '开始匹配'}}
+        </text>
+        <view wx:else class="loading-spinner"></view>
+      </button>
+    </view>
+
+    <!-- 功能介绍 -->
+    <view class="features-section">
+      <view class="feature-item">
+        <text class="feature-icon">⭐</text>
+        <view class="feature-content">
+          <text class="feature-title">星座连接</text>
+          <text class="feature-desc">选择兴趣作为星星，形成独特的星座连线</text>
+        </view>
+      </view>
+      
+      <view class="feature-item">
+        <text class="feature-icon">💝</text>
+        <view class="feature-content">
+          <text class="feature-title">智能匹配</text>
+          <text class="feature-desc">基于兴趣重叠和重要程度计算匹配度</text>
+        </view>
+      </view>
+      
+      <view class="feature-item">
+        <text class="feature-icon">🎯</text>
+        <view class="feature-content">
+          <text class="feature-title">活动推荐</text>
+          <text class="feature-desc">为你们推荐最适合的约会活动</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

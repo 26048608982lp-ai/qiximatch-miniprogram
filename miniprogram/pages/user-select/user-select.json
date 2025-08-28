@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "选择兴趣",
+  "usingComponents": {
+    "constellation": "/components/constellation/constellation"
+  },
+  "enablePullDownRefresh": true
+}

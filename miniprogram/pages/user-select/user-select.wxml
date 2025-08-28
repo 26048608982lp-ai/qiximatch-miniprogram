@@ -1,0 +1,133 @@
+<!-- 兴趣选择页面模板 -->
+<view class="container {{showContent ? 'fade-in' : ''}}">
+  <!-- 头部信息 -->
+  <view class="header">
+    <view class="user-info">
+      <text class="user-name">{{userName}} 的选择</text>
+      <text class="user-desc">选择你感兴趣的活动，不感兴趣的不用选择。选择后可以设置重要程度（1-5星），越喜欢越重要就给越高分。</text>
+    </view>
+    <view class="header-actions">
+      <button class="btn btn-secondary" bindtap="goHome" size="mini">
+        <text class="btn-icon">🏠</text>
+        返回首页
+      </button>
+    </view>
+  </view>
+
+  <!-- 切换按钮 -->
+  <view class="toggle-section">
+    <button 
+      class="toggle-btn {{showConstellation ? 'active' : ''}}"
+      bindtap="toggleConstellation"
+    >
+      <text class="toggle-icon">⭐</text>
+      星空图模式
+    </button>
+    <button 
+      class="toggle-btn {{!showConstellation ? 'active' : ''}}"
+      bindtap="toggleConstellation"
+    >
+      <text class="toggle-icon">📋</text>
+      列表模式
+    </button>
+  </view>
+
+  <!-- 星空图模式 -->
+  <view wx:if="{{showConstellation}}" class="constellation-section">
+    <constellation 
+      interests="{{getCurrentCategoryInterests()}}"
+      selected-interests="{{selectedInterests}}"
+      bindinterestselect="handleInterestSelect"
+    />
+  </view>
+
+  <!-- 列表模式 -->
+  <view wx:else class="list-section">
+    <!-- 分类标签 -->
+    <view class="category-tabs">
+      <view 
+        wx:for="{{interestCategories}}"
+        wx:key="id"
+        class="category-tab {{activeCategory === item.id ? 'active' : ''}}"
+        data-category="{{item.id}}"
+        bindtap="switchCategory"
+      >
+        <text class="category-icon">{{item.icon}}</text>
+        <text class="category-name">{{item.name}}</text>
+      </view>
+    </view>
+
+    <!-- 兴趣网格 -->
+    <view class="interests-grid">
+      <view 
+        wx:for="{{getCurrentCategoryInterests()}}"
+        wx:key="id"
+        class="interest-item {{isSelected(item.id) ? 'selected' : ''}}"
+        bindtap="handleInterestClick"
+        data-interest="{{item}}"
+      >
+        <view class="interest-content">
+          <view class="interest-header">
+            <text class="interest-icon">{{item.icon}}</text>
+            <text class="interest-name">{{item.name}}</text>
+            <text wx:if="{{isSelected(item.id)}}" class="selected-icon">✓</text>
+          </view>
+          
+          <!-- 重要程度选择 -->
+          <view wx:if="{{isSelected(item.id)}}" class="importance-section">
+            <text class="importance-label">重要程度</text>
+            <view class="importance-stars">
+              <view 
+                wx:for="{{[1, 2, 3, 4, 5]}}"
+                wx:key="*this"
+                class="star {{getSelectedInterest(item.id).importance >= item ? 'active' : ''}}"
+                data-interest-id="{{item.id}}"
+                data-importance="{{item}}"
+                bindtap="updateInterestImportance"
+              >
+                ⭐
+              </view>
+            </view>
+            <text class="importance-value">{{getSelectedInterest(item.id).importance}}★</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 已选择的兴趣预览 -->
+  <view class="selected-preview">
+    <view class="preview-header">
+      <text class="preview-title">已选择的兴趣 ({{selectedInterests.length}})</text>
+    </view>
+    <view wx:if="{{selectedInterests.length > 0}}" class="selected-list">
+      <view 
+        wx:for="{{selectedInterests}}"
+        wx:key="id"
+        class="selected-item"
+      >
+        <text class="selected-icon">{{item.icon}}</text>
+        <text class="selected-name">{{item.name}}</text>
+        <text class="selected-importance">{{item.importance}}★</text>
+      </view>
+    </view>
+    <view wx:else class="empty-state">
+      <text class="empty-icon">🌟</text>
+      <text class="empty-text">还没有选择任何兴趣</text>
+    </view>
+  </view>
+
+  <!-- 底部操作按钮 -->
+  <view class="bottom-actions">
+    <button 
+      class="btn btn-primary btn-large {{isLoading ? 'loading' : ''}}"
+      bindtap="completeSelection"
+      disabled="{{selectedInterests.length === 0 || isLoading}}"
+    >
+      <text wx:if="{{!isLoading}}" class="btn-text">
+        {{isUser1 ? '完成选择，分享给对方' : '查看匹配结果'}}
+      </text>
+      <view wx:else class="loading-spinner"></view>
+    </button>
+  </view>
+</view>
