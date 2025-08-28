@@ -21,15 +21,27 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // 优先检查URL数据参数
-    console.log('Checking URL data...');
+    console.log('🔍 Checking URL data...');
     console.log('Current URL:', window.location.href);
     console.log('URL search:', window.location.search);
+    console.log('URL hostname:', window.location.hostname);
     
     const sessionDataFromUrl = SessionManager.getSessionDataFromUrl();
-    console.log('Session data from URL:', sessionDataFromUrl);
+    console.log('📦 Session data from URL:', sessionDataFromUrl);
     
     if (sessionDataFromUrl) {
-      console.log('Found session data from URL, setting state...');
+      console.log('✅ Found valid session data from URL, processing...');
+      console.log('Session data details:', {
+        sessionId: sessionDataFromUrl.sessionId,
+        hasUser1: !!sessionDataFromUrl.user1,
+        hasUser2: !!sessionDataFromUrl.user2,
+        user2Name: sessionDataFromUrl.user2Name,
+        hasMatchResult: !!sessionDataFromUrl.matchResult,
+        user1Name: sessionDataFromUrl.user1?.name,
+        user2ActualName: sessionDataFromUrl.user2?.name
+      });
+      
+      console.log('Setting session data from URL...');
       setSessionData(sessionDataFromUrl);
       
       // 安全地设置sessionId，如果不存在则生成新的
@@ -44,38 +56,49 @@ const App: React.FC = () => {
       
       if (sessionDataFromUrl.user1 && sessionDataFromUrl.user2) {
         // 两个用户都完成了，显示结果
-        console.log('Both users completed, showing results...');
+        console.log('🎯 Both users completed, showing results...');
+        console.log('User1 name:', sessionDataFromUrl.user1.name);
+        console.log('User2 name:', sessionDataFromUrl.user2.name);
+        console.log('Has pre-calculated result:', !!sessionDataFromUrl.matchResult);
+        
         let result;
         
         // 如果会话数据中已经有匹配结果，直接使用
         if (sessionDataFromUrl.matchResult) {
-          console.log('Using pre-calculated match result from URL data');
+          console.log('✅ Using pre-calculated match result from URL data');
           result = sessionDataFromUrl.matchResult;
         } else {
           // 否则重新计算匹配结果
-          console.log('Calculating new match result');
+          console.log('🔄 Calculating new match result');
           result = engine.calculateMatch(sessionDataFromUrl.user1.interests, sessionDataFromUrl.user2.interests);
         }
         
+        console.log('📊 Match result prepared:', result);
         setMatchResult(result);
         setUser1Name(sessionDataFromUrl.user1.name);
         setUser2Name(sessionDataFromUrl.user2.name);
         setStage('results');
+        console.log('🎉 Set stage to results');
       } else if (sessionDataFromUrl.user1) {
         // 用户1完成了，检查是否有用户2的名字
-        console.log('User 1 completed, checking for user2 name...');
+        console.log('👤 User 1 completed, checking for user2 name...');
+        console.log('User1 name:', sessionDataFromUrl.user1.name);
+        console.log('User2 name from URL:', sessionDataFromUrl.user2Name);
+        
         setUser1Name(sessionDataFromUrl.user1.name);
         setUser1Interests(sessionDataFromUrl.user1.interests);
         
         // 如果URL中已经有user2Name，直接进入用户2的选择界面
         if (sessionDataFromUrl.user2Name) {
-          console.log('Found user2Name in URL:', sessionDataFromUrl.user2Name);
+          console.log('✅ Found user2Name in URL:', sessionDataFromUrl.user2Name);
           setUser2Name(sessionDataFromUrl.user2Name);
           setStage('user2');
+          console.log('🎯 Set stage to user2 (skip name entry)');
         } else {
           // 否则需要输入用户2的名字
-          console.log('No user2Name found, showing enter name...');
+          console.log('❓ No user2Name found, showing enter name...');
           setStage('enterName');
+          console.log('🎯 Set stage to enterName');
         }
       }
       return;
@@ -194,24 +217,55 @@ const App: React.FC = () => {
   const copyShareLink = async () => {
     console.log('copyShareLink called');
     console.log('Current sessionData:', sessionData);
+    console.log('Current user1Name:', user1Name);
+    console.log('Current user2Name:', user2Name);
     
     if (!sessionData) {
+      console.error('❌ No session data available');
       alert('没有可分享的数据');
       return;
     }
     
+    // 验证用户A分享场景的数据完整性
+    if (!sessionData.user1) {
+      console.error('❌ User1 data missing from session');
+      alert('用户A数据不完整，请重新完成选择');
+      return;
+    }
+    
+    if (!sessionData.user2Name && !user2Name) {
+      console.error('❌ User2 name missing');
+      alert('请确保已输入用户B的姓名');
+      return;
+    }
+    
     try {
+      // 确保sessionData包含user2Name
+      const shareSessionData = {
+        ...sessionData,
+        user2Name: sessionData.user2Name || user2Name
+      };
+      
+      console.log('✅ Prepared session data for sharing:', shareSessionData);
       console.log('About to call getShareableLinkWithData...');
-      const shareLink = SessionManager.getShareableLinkWithData(sessionData);
+      
+      const shareLink = SessionManager.getShareableLinkWithData(shareSessionData);
       console.log('Generated share link:', shareLink);
       console.log('Link length:', shareLink.length);
       console.log('Link contains data parameter:', shareLink.includes('?data='));
+      console.log('Link format check - contains session ID format:', shareLink.includes('?session='));
+      
+      // 验证链接格式
+      if (!shareLink.includes('?data=')) {
+        console.warn('⚠️ Share link might be using fallback format:', shareLink);
+      }
       
       await navigator.clipboard.writeText(shareLink);
-      console.log('Link copied to clipboard');
-      alert('分享链接已复制到剪贴板！');
+      console.log('✅ Share link copied to clipboard');
+      alert('分享链接已复制到剪贴板！可以发送给' + (shareSessionData.user2Name || user2Name) + '填写。');
     } catch (err) {
-      console.error('Failed to copy share link: ', err);
+      console.error('❌ Failed to copy share link: ', err);
+      console.error('Error details:', err);
       alert('复制分享链接失败，请手动复制链接');
     }
   };

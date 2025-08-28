@@ -81,6 +81,7 @@ class SessionManager {
       hasUser1: !!sessionData.user1,
       hasUser2: !!sessionData.user2,
       hasUser2Name: !!sessionData.user2Name,
+      hasMatchResult: !!sessionData.matchResult,
       user1Name: sessionData.user1?.name,
       user2Name: sessionData.user2Name,
       sessionId: sessionData.sessionId
@@ -90,36 +91,89 @@ class SessionManager {
       const baseUrl = window.location.origin;
       console.log('Base URL:', baseUrl);
       
-      // Clean the session data before encoding to remove undefined values
-      const cleanData = {
-        sessionId: sessionData.sessionId,
-        user1: sessionData.user1,
-        user2: sessionData.user2,
-        user2Name: sessionData.user2Name,
-        createdAt: sessionData.createdAt
+      // 更智能的数据清理 - 根据数据类型决定包含哪些字段
+      const cleanData: any = {
+        sessionId: sessionData.sessionId || this.generateSessionId(),
+        createdAt: sessionData.createdAt || Date.now()
       };
-      console.log('✅ Clean data prepared:', cleanData);
+      
+      // 始终包含 user1 数据（如果存在）
+      if (sessionData.user1) {
+        cleanData.user1 = sessionData.user1;
+      }
+      
+      // 只有当 user2 存在时才包含（用户B完成后的场景）
+      if (sessionData.user2) {
+        cleanData.user2 = sessionData.user2;
+      }
+      
+      // 始终包含 user2Name（如果存在）
+      if (sessionData.user2Name) {
+        cleanData.user2Name = sessionData.user2Name;
+      }
+      
+      // 包含匹配结果（如果存在）
+      if (sessionData.matchResult) {
+        cleanData.matchResult = sessionData.matchResult;
+      }
+      
+      console.log('✅ Smart clean data prepared:', cleanData);
+      console.log('Clean data keys:', Object.keys(cleanData));
       
       const jsonString = JSON.stringify(cleanData);
       console.log('✅ JSON string length:', jsonString.length);
       console.log('JSON string preview:', jsonString.substring(0, 200));
+      
+      // 验证JSON字符串的有效性
+      if (!jsonString || jsonString.length < 2) {
+        throw new Error('Generated JSON string is invalid');
+      }
       
       // Fix for UTF-8 characters (like Chinese characters)
       const encodedData = btoa(unescape(encodeURIComponent(jsonString)));
       console.log('✅ Encoded data length:', encodedData.length);
       console.log('First 100 chars of encoded data:', encodedData.substring(0, 100));
       
+      if (!encodedData || encodedData.length < 10) {
+        throw new Error('Encoded data is invalid or too short');
+      }
+      
       const finalUrl = `${baseUrl}?data=${encodedData}`;
       console.log('✅ Final URL generated:', finalUrl);
       console.log('URL contains data parameter:', finalUrl.includes('?data='));
+      console.log('URL length:', finalUrl.length);
       
       return finalUrl;
     } catch (error) {
       console.error('❌ Failed to encode session data:', error);
       console.error('Error details:', error);
-      // Fallback to session ID only
-      console.log('⚠️ Using fallback to session ID only');
-      return this.getShareableLink(sessionData.sessionId);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      
+      // 尝试更简单的数据格式作为最后的fallback
+      try {
+        console.log('⚠️ Trying minimal data format as fallback...');
+        const fallbackBaseUrl = window.location.origin;
+        const minimalData = {
+          sessionId: sessionData.sessionId || this.generateSessionId(),
+          user1: sessionData.user1 ? {
+            name: sessionData.user1.name,
+            interests: sessionData.user1.interests
+          } : null,
+          user2Name: sessionData.user2Name || '',
+          createdAt: Date.now()
+        };
+        
+        const minimalJson = JSON.stringify(minimalData);
+        const minimalEncoded = btoa(unescape(encodeURIComponent(minimalJson)));
+        const fallbackUrl = `${fallbackBaseUrl}?data=${minimalEncoded}`;
+        
+        console.log('✅ Minimal fallback URL generated:', fallbackUrl);
+        return fallbackUrl;
+      } catch (fallbackError) {
+        console.error('❌ Even minimal fallback failed:', fallbackError);
+        console.log('⚠️ Using session ID only as last resort');
+        return this.getShareableLink(sessionData.sessionId);
+      }
     }
   }
 
