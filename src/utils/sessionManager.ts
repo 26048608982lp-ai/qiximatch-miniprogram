@@ -74,8 +74,13 @@ class SessionManager {
   }
 
   getShareableLinkWithData(sessionData: SessionData): string {
+    console.log('SessionManager: getShareableLinkWithData called');
+    console.log('Session data input:', sessionData);
+    
     try {
       const baseUrl = window.location.origin;
+      console.log('Base URL:', baseUrl);
+      
       // Clean the session data before encoding to remove undefined values
       const cleanData = {
         sessionId: sessionData.sessionId,
@@ -84,11 +89,24 @@ class SessionManager {
         user2Name: sessionData.user2Name,
         createdAt: sessionData.createdAt
       };
-      const encodedData = btoa(JSON.stringify(cleanData));
-      return `${baseUrl}?data=${encodedData}`;
+      console.log('Clean data:', cleanData);
+      
+      const jsonString = JSON.stringify(cleanData);
+      console.log('JSON string length:', jsonString.length);
+      
+      const encodedData = btoa(jsonString);
+      console.log('Encoded data length:', encodedData.length);
+      console.log('First 100 chars of encoded data:', encodedData.substring(0, 100));
+      
+      const finalUrl = `${baseUrl}?data=${encodedData}`;
+      console.log('Final URL:', finalUrl);
+      
+      return finalUrl;
     } catch (error) {
       console.error('Failed to encode session data:', error);
+      console.error('Error details:', error);
       // Fallback to session ID only
+      console.log('Using fallback to session ID only');
       return this.getShareableLink(sessionData.sessionId);
     }
   }

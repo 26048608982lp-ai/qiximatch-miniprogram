@@ -138,15 +138,23 @@ const App: React.FC = () => {
   };
 
   const copyShareLink = async () => {
+    console.log('copyShareLink called');
+    console.log('Current sessionData:', sessionData);
+    
     if (!sessionData) {
       alert('没有可分享的数据');
       return;
     }
     
     try {
+      console.log('About to call getShareableLinkWithData...');
       const shareLink = SessionManager.getShareableLinkWithData(sessionData);
       console.log('Generated share link:', shareLink);
+      console.log('Link length:', shareLink.length);
+      console.log('Link contains data parameter:', shareLink.includes('?data='));
+      
       await navigator.clipboard.writeText(shareLink);
+      console.log('Link copied to clipboard');
       alert('分享链接已复制到剪贴板！');
     } catch (err) {
       console.error('Failed to copy share link: ', err);
