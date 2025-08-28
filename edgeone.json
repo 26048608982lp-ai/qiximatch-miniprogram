@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "name": "qixi-match",
+  "routes": [
+    {
+      "path": "/",
+      "method": "GET",
+      "dest": "/index.html"
+    },
+    {
+      "path": "/*",
+      "method": "GET",
+      "dest": "/index.html"
+    }
+  ],
+  "errorPages": {
+    "404": "/index.html"
+  }
+}
