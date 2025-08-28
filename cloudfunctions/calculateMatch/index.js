@@ -5,6 +5,7 @@ cloud.init({
 })
 
 const db = cloud.database()
+const { sessionAuthMiddleware } = require('../auth-middleware')
 
 // 活动推荐数据
 const activities = [
@@ -228,30 +229,90 @@ function getCategoryName(category) {
   return names[category] || category
 }
 
+// 输入验证函数
+function validateInput(data) {
+  const errors = []
+  
+  // 验证会话ID
+  if (!data.sessionId || typeof data.sessionId !== 'string') {
+    errors.push('会话ID不能为空')
+  } else {
+    const trimmed = data.sessionId.trim()
+    if (trimmed.length < 10 || trimmed.length > 50) {
+      errors.push('会话ID格式不正确')
+    }
+    if (!/^[a-zA-Z0-9]+$/.test(trimmed)) {
+      errors.push('会话ID包含非法字符')
+    }
+  }
+  
+  // 验证兴趣数组
+  if (!Array.isArray(data.user2Interests)) {
+    errors.push('兴趣数据必须是数组')
+  } else if (data.user2Interests.length === 0) {
+    errors.push('请至少选择一个兴趣')
+  } else if (data.user2Interests.length > 20) {
+    errors.push('兴趣数量不能超过20个')
+  } else {
+    // 验证每个兴趣项
+    const validCategories = ['entertainment', 'sports', 'food', 'travel']
+    const validInterests = {
+      entertainment: ['movies', 'music', 'games', 'concerts', 'theater', 'art'],
+      sports: ['basketball', 'football', 'tennis', 'swimming', 'hiking', 'yoga'],
+      food: ['chinese', 'western', 'japanese', 'dessert', 'coffee', 'cooking'],
+      travel: ['beach', 'mountains', 'city', 'countryside', 'museum', 'shopping']
+    }
+    
+    for (const interest of data.user2Interests) {
+      if (!interest || typeof interest !== 'object') {
+        errors.push('兴趣数据格式不正确')
+        break
+      }
+      
+      if (!interest.id || !interest.name || !interest.category) {
+        errors.push('兴趣数据缺少必要字段')
+        break
+      }
+      
+      if (!validCategories.includes(interest.category)) {
+        errors.push(`兴趣分类 "${interest.category}" 不存在`)
+        break
+      }
+      
+      if (!validInterests[interest.category].includes(interest.id)) {
+        errors.push(`兴趣 "${interest.name}" 不存在`)
+        break
+      }
+      
+      if (interest.importance !== undefined) {
+        const importance = parseInt(interest.importance)
+        if (isNaN(importance) || importance < 1 || importance > 5) {
+          errors.push('重要程度必须是1-5之间的整数')
+          break
+        }
+      }
+    }
+  }
+  
+  return errors
+}
+
 // 云函数入口函数
-exports.main = async (event, context) => {
+const handler = async (event, context) => {
   const { sessionId, user2Interests } = event
   
   try {
     // 验证输入参数
-    if (!sessionId || !user2Interests) {
+    const validationErrors = validateInput({ sessionId, user2Interests })
+    if (validationErrors.length > 0) {
       return {
         success: false,
-        error: '缺少必要参数'
+        error: validationErrors.join(', ')
       }
     }
 
-    // 获取会话数据
-    const sessionResult = await db.collection('sessions').doc(sessionId).get()
-    
-    if (!sessionResult.data) {
-      return {
-        success: false,
-        error: '会话不存在'
-      }
-    }
-    
-    const sessionData = sessionResult.data
+    // 获取会话数据（已在中间件中验证）
+    const sessionData = event.session
     
     // 检查会话状态
     if (sessionData.status !== 'waiting') {
@@ -269,11 +330,13 @@ exports.main = async (event, context) => {
       data: {
         user2Interests,
         matchResult,
-        status: 'completed'
+        status: 'completed',
+        completedAt: new Date(),
+        completedBy: event.auth?.openid || 'unknown'
       }
     })
     
-    console.log('匹配计算成功:', sessionId)
+    console.log('匹配计算成功:', sessionId, '完成者:', event.auth?.openid)
     
     return {
       success: true,
@@ -290,3 +353,6 @@ exports.main = async (event, context) => {
     }
   }
 }
+
+// 使用会话认证中间件包装处理器
+exports.main = sessionAuthMiddleware(handler)

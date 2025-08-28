@@ -169,6 +169,14 @@ ${this.data.shareLink}
     }, 3000)
   },
 
+  // 清理定时器
+  clearIntervals() {
+    if (this.heartInterval) {
+      clearInterval(this.heartInterval)
+      this.heartInterval = null
+    }
+  },
+
   // 处理分享方式选择
   handleShareMethod(e) {
     const method = e.currentTarget.dataset.method
@@ -297,8 +305,11 @@ ${this.data.shareLink}
 
   // 页面卸载时清除定时器
   onUnload() {
-    if (this.heartInterval) {
-      clearInterval(this.heartInterval)
-    }
+    this.clearIntervals()
+  },
+
+  // 页面隐藏时清除定时器
+  onHide() {
+    this.clearIntervals()
   }
 })

@@ -1,6 +1,7 @@
 // 首页页面逻辑
 const sessionManager = require('../../utils/session')
 const { getCurrentSession, clearCurrentSession, createNewSession } = require('../../utils/session')
+const { validateUsername, validateMultiple } = require('../../utils/validator')
 
 Page({
   data: {
@@ -62,6 +63,14 @@ Page({
     }, 3000)
   },
 
+  // 清理定时器
+  clearIntervals() {
+    if (this.heartInterval) {
+      clearInterval(this.heartInterval)
+      this.heartInterval = null
+    }
+  },
+
   // 检查当前会话
   checkCurrentSession() {
     const currentSession = getCurrentSession()
@@ -97,17 +106,14 @@ Page({
     const { user1Name, user2Name, currentSession } = this.data
     
     // 验证输入
-    if (!user1Name.trim()) {
-      wx.showToast({
-        title: '请输入你的名字',
-        icon: 'none'
-      })
-      return
-    }
+    const validation = validateMultiple({
+      user1Name: () => validateUsername(user1Name),
+      user2Name: () => validateUsername(user2Name)
+    })
     
-    if (!user2Name.trim()) {
+    if (!validation.valid) {
       wx.showToast({
-        title: '请输入对方的名字',
+        title: validation.errors[0],
         icon: 'none'
       })
       return
@@ -129,8 +135,8 @@ Page({
       } else {
         // 创建新会话，跳转到兴趣选择页
         const result = await createNewSession(
-          user1Name.trim(),
-          user2Name.trim(),
+          validation.results.user1Name.value,
+          validation.results.user2Name.value,
           [] // 初始为空兴趣列表
         )
         
@@ -191,9 +197,12 @@ Page({
 
   // 页面卸载时清除定时器
   onUnload() {
-    if (this.heartInterval) {
-      clearInterval(this.heartInterval)
-    }
+    this.clearIntervals()
+  },
+
+  // 页面隐藏时清除定时器
+  onHide() {
+    this.clearIntervals()
   },
 
   // 下拉刷新

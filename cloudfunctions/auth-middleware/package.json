@@ -1,0 +1,9 @@
+{
+  "name": "auth-middleware",
+  "version": "1.0.0",
+  "description": "Authentication middleware for WeChat cloud functions",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

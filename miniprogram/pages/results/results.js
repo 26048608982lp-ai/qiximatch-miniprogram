@@ -161,17 +161,26 @@ ${link}`
     const targetScore = this.data.matchResult.overallScore
     let currentScore = 0
     
-    const animation = setInterval(() => {
+    this.scoreAnimation = setInterval(() => {
       currentScore += 2
       if (currentScore >= targetScore) {
         currentScore = targetScore
-        clearInterval(animation)
+        clearInterval(this.scoreAnimation)
+        this.scoreAnimation = null
       }
       
       this.setData({
         scoreAnimation: currentScore
       })
     }, 30)
+  },
+
+  // 清理定时器
+  clearIntervals() {
+    if (this.scoreAnimation) {
+      clearInterval(this.scoreAnimation)
+      this.scoreAnimation = null
+    }
   },
 
   // 刷新数据
@@ -296,5 +305,15 @@ ${link}`
   onPullDownRefresh() {
     this.refreshData()
     wx.stopPullDownRefresh()
+  },
+
+  // 页面卸载时清除定时器
+  onUnload() {
+    this.clearIntervals()
+  },
+
+  // 页面隐藏时清除定时器
+  onHide() {
+    this.clearIntervals()
   }
 })

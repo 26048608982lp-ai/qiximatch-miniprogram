@@ -14,35 +14,8 @@
     </view>
   </view>
 
-  <!-- 切换按钮 -->
-  <view class="toggle-section">
-    <button 
-      class="toggle-btn {{showConstellation ? 'active' : ''}}"
-      bindtap="toggleConstellation"
-    >
-      <text class="toggle-icon">⭐</text>
-      星空图模式
-    </button>
-    <button 
-      class="toggle-btn {{!showConstellation ? 'active' : ''}}"
-      bindtap="toggleConstellation"
-    >
-      <text class="toggle-icon">📋</text>
-      列表模式
-    </button>
-  </view>
-
-  <!-- 星空图模式 -->
-  <view wx:if="{{showConstellation}}" class="constellation-section">
-    <constellation 
-      interests="{{getCurrentCategoryInterests()}}"
-      selected-interests="{{selectedInterests}}"
-      bindinterestselect="handleInterestSelect"
-    />
-  </view>
-
-  <!-- 列表模式 -->
-  <view wx:else class="list-section">
+  <!-- 兴趣选择区域 -->
+  <view class="list-section">
     <!-- 分类标签 -->
     <view class="category-tabs">
       <view 

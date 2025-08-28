@@ -1,7 +1,9 @@
 // 兴趣选择页面逻辑
 const sessionManager = require('../../utils/session')
 const { getCurrentSession, createNewSession, updateSessionInfo, calculateMatchResult } = require('../../utils/session')
-const { showLoading, hideLoading, showSuccess, showError, showModal } = require('../../utils/cloud')
+const { showLoading, hideLoading, showSuccess, showModal } = require('../../utils/cloud')
+const { validateSessionId, validateInterests, validateImportance } = require('../../utils/validator')
+const { ErrorHandler, NetworkErrorHandler, ValidationErrorHandler, ErrorTypes } = require('../../utils/errorHandler')
 
 const app = getApp()
 
@@ -17,9 +19,7 @@ Page({
     activeCategory: 'entertainment',
     selectedInterests: [],
     
-    // 星空图数据
-    showConstellation: false,
-    
+      
     // 会话数据
     sessionId: '',
     sessionData: null,
@@ -79,7 +79,7 @@ Page({
 
   // 初始化页面
   async initPage() {
-    try {
+    const result = await ErrorHandler.withErrorHandling(async () => {
       showLoading('正在加载数据...')
       
       // 获取当前会话
@@ -106,11 +106,15 @@ Page({
       })
       
       hideLoading()
-      
-    } catch (error) {
-      console.error('初始化页面失败:', error)
-      hideLoading()
-      showError('加载失败，请重试')
+    }, { operation: 'initPage' })
+    
+    if (!result.success) {
+      // 如果初始化失败，延迟返回首页
+      setTimeout(() => {
+        wx.redirectTo({
+          url: '/pages/index/index'
+        })
+      }, 1500)
     }
   },
 
@@ -119,8 +123,17 @@ Page({
     const { sessionId } = this.data
     
     if (sessionId) {
+      // 验证会话ID
+      const validation = ValidationErrorHandler.handleValidationError(validateSessionId(sessionId))
+      if (!validation.success) {
+        return null
+      }
+      
       // 从云端获取会话数据
-      const result = await sessionManager.getSessionInfo(sessionId)
+      const result = await ErrorHandler.retryWithBackoff(async () => {
+        return await sessionManager.getSessionInfo(validation.value)
+      }, 3, 1000, { operation: 'getSessionInfo', sessionId })
+      
       if (result.success) {
         return result.data
       }
@@ -173,19 +186,7 @@ Page({
     })
   },
 
-  // 切换星空图显示
-  toggleConstellation() {
-    this.setData({
-      showConstellation: !this.data.showConstellation
-    })
-  },
-
-  // 处理兴趣选择（星空图）
-  handleInterestSelect(e) {
-    const { interest } = e.detail
-    this.handleInterestSelectInternal(interest)
-  },
-
+  
   // 处理兴趣选择（列表）
   handleInterestClick(e) {
     const { interest } = e.currentTarget.dataset
@@ -221,8 +222,14 @@ Page({
     const { interestId, importance } = e.currentTarget.dataset
     const { selectedInterests } = this.data
     
+    // 验证重要程度
+    const validation = ValidationErrorHandler.handleValidationError(validateImportance(importance))
+    if (!validation.success) {
+      return
+    }
+    
     const newSelection = selectedInterests.map(interest => 
-      interest.id === interestId ? { ...interest, importance: parseInt(importance) } : interest
+      interest.id === interestId ? { ...interest, importance: validation.value } : interest
     )
     
     this.setData({
@@ -237,39 +244,38 @@ Page({
   async updateSessionInterests(interests) {
     const { sessionId, isUser1 } = this.data
     
-    try {
+    await ErrorHandler.withErrorHandling(async () => {
       const updateData = isUser1 ? 
         { user1Interests: interests } : 
         { user2Interests: interests }
       
       await updateSessionInfo(sessionId, updateData)
-    } catch (error) {
-      console.error('更新兴趣数据失败:', error)
-    }
+    }, { operation: 'updateSessionInterests', sessionId, isUser1 })
   },
 
   // 完成选择
   async completeSelection() {
     const { selectedInterests, sessionId, isUser1 } = this.data
     
-    if (selectedInterests.length === 0) {
-      showError('请至少选择一个兴趣')
+    if (this.data.isLoading) return
+    
+    // 验证兴趣数据
+    const validation = ValidationErrorHandler.handleValidationError(validateInterests(selectedInterests))
+    if (!validation.success) {
       return
     }
-    
-    if (this.data.isLoading) return
     
     this.setData({
       isLoading: true
     })
     
-    try {
+    const result = await ErrorHandler.withErrorHandling(async () => {
       showLoading('正在保存...')
       
       if (isUser1) {
         // 用户1完成，跳转到分享页
         await updateSessionInfo(sessionId, {
-          user1Interests: selectedInterests
+          user1Interests: validation.value
         })
         
         hideLoading()
@@ -280,34 +286,30 @@ Page({
         })
       } else {
         // 用户2完成，计算匹配结果
-        const result = await calculateMatchResult(sessionId, selectedInterests)
+        const matchResult = await ErrorHandler.retryWithBackoff(async () => {
+          return await calculateMatchResult(sessionId, validation.value)
+        }, 3, 1000, { operation: 'calculateMatchResult', sessionId })
         
-        if (result.success) {
+        if (matchResult.success) {
           hideLoading()
           
           // 保存匹配结果到全局数据
-          app.globalData.matchResult = result.matchResult
-          app.globalData.getMatchLevel = result.getMatchLevel
-          app.globalData.getCategoryName = result.getCategoryName
+          app.globalData.matchResult = matchResult.matchResult
+          app.globalData.getMatchLevel = matchResult.getMatchLevel
+          app.globalData.getCategoryName = matchResult.getCategoryName
           
           wx.navigateTo({
             url: '/pages/results/results'
           })
         } else {
-          hideLoading()
-          showError('计算匹配失败')
+          throw ErrorHandler.createError(ErrorTypes.SERVER, '计算匹配失败')
         }
       }
-      
-    } catch (error) {
-      console.error('完成选择失败:', error)
-      hideLoading()
-      showError('操作失败，请重试')
-    } finally {
-      this.setData({
-        isLoading: false
-      })
-    }
+    }, { operation: 'completeSelection', sessionId, isUser1 })
+    
+    this.setData({
+      isLoading: false
+    })
   },
 
   // 返回首页

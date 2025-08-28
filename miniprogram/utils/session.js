@@ -1,7 +1,9 @@
 // 会话管理工具
 
 const app = getApp()
-const { createSession, getSession, updateSession, calculateMatch, setStorage, getStorage, removeStorage } = require('./cloud')
+const { createSession, getSession, updateSession, calculateMatch } = require('./cloud')
+const { wxApi, storage, logger } = require('./common')
+const { ErrorHandler, NetworkErrorHandler, ValidationErrorHandler, ErrorTypes } = require('./errorHandler')
 
 // 本地存储键名
 const STORAGE_KEYS = {
@@ -10,17 +12,33 @@ const STORAGE_KEYS = {
   SETTINGS: 'settings'
 }
 
-// 生成会话ID
+// 生成安全的会话ID
 const generateSessionId = () => {
-  return Math.random().toString(36).substr(2, 9)
+  // 使用时间戳 + 随机数生成更安全的ID
+  const timestamp = Date.now().toString(36)
+  const randomPart = Math.random().toString(36).substring(2, 15)
+  const cryptoPart = () => {
+    try {
+      const array = new Uint8Array(8)
+      crypto.getRandomValues(array)
+      return Array.from(array, byte => byte.toString(36).padStart(2, '0')).join('')
+    } catch (e) {
+      // 降级方案
+      return Math.random().toString(36).substring(2, 15)
+    }
+  }
+  
+  return timestamp + randomPart + cryptoPart().substring(0, 8)
 }
 
 // 创建新会话
 const createNewSession = async (user1Name, user2Name, user1Interests) => {
-  try {
-    showLoading('正在创建会话...')
+  return await ErrorHandler.withErrorHandling(async () => {
+    wxApi.showLoading('正在创建会话...')
     
-    const result = await createSession(user1Name, user2Name, user1Interests)
+    const result = await ErrorHandler.retryWithBackoff(async () => {
+      return await createSession(user1Name, user2Name, user1Interests)
+    }, 3, 1000, { operation: 'createSession', user1Name, user2Name })
     
     if (result.success) {
       // 保存当前会话到本地
@@ -33,56 +51,44 @@ const createNewSession = async (user1Name, user2Name, user1Interests) => {
         createdAt: new Date()
       }
       
-      setStorage(STORAGE_KEYS.CURRENT_SESSION, sessionData)
+      storage.set(STORAGE_KEYS.CURRENT_SESSION, sessionData)
       
-      hideLoading()
+      wxApi.hideLoading()
       return {
         success: true,
         sessionId: result.sessionId,
         data: sessionData
       }
     } else {
-      hideLoading()
-      showError('创建会话失败')
-      return {
-        success: false,
-        error: result.error
-      }
+      throw ErrorHandler.createError(ErrorTypes.SERVER, result.error)
     }
-  } catch (error) {
-    hideLoading()
-    console.error('创建会话失败:', error)
-    return {
-      success: false,
-      error: error.message
-    }
-  }
+  }, { operation: 'createNewSession' })
 }
 
 // 获取会话信息
 const getSessionInfo = async (sessionId) => {
   try {
-    showLoading('正在获取会话...')
+    wxApi.showLoading('正在获取会话...')
     
     const result = await getSession(sessionId)
     
     if (result.success) {
-      hideLoading()
+      wxApi.hideLoading()
       return {
         success: true,
         data: result.data
       }
     } else {
-      hideLoading()
-      showError('获取会话失败')
+      wxApi.hideLoading()
+      wxApi.showError('获取会话失败')
       return {
         success: false,
         error: result.error
       }
     }
   } catch (error) {
-    hideLoading()
-    console.error('获取会话失败:', error)
+    wxApi.hideLoading()
+    logger.error('获取会话失败:', error)
     return {
       success: false,
       error: error.message
@@ -97,10 +103,10 @@ const updateSessionInfo = async (sessionId, updateData) => {
     
     if (result.success) {
       // 更新本地存储
-      const localSession = getStorage(STORAGE_KEYS.CURRENT_SESSION)
+      const localSession = storage.get(STORAGE_KEYS.CURRENT_SESSION)
       if (localSession) {
         const updatedSession = { ...localSession, ...updateData }
-        setStorage(STORAGE_KEYS.CURRENT_SESSION, updatedSession)
+        storage.set(STORAGE_KEYS.CURRENT_SESSION, updatedSession)
       }
       
       return {
@@ -114,7 +120,7 @@ const updateSessionInfo = async (sessionId, updateData) => {
       }
     }
   } catch (error) {
-    console.error('更新会话失败:', error)
+    logger.error('更新会话失败:', error)
     return {
       success: false,
       error: error.message
@@ -125,13 +131,13 @@ const updateSessionInfo = async (sessionId, updateData) => {
 // 计算匹配结果
 const calculateMatchResult = async (sessionId, user2Interests) => {
   try {
-    showLoading('正在计算匹配...')
+    wxApi.showLoading('正在计算匹配...')
     
     const result = await calculateMatch(sessionId, user2Interests)
     
     if (result.success) {
       // 更新本地存储
-      const localSession = getStorage(STORAGE_KEYS.CURRENT_SESSION)
+      const localSession = storage.get(STORAGE_KEYS.CURRENT_SESSION)
       if (localSession) {
         const updatedSession = {
           ...localSession,
@@ -139,10 +145,10 @@ const calculateMatchResult = async (sessionId, user2Interests) => {
           matchResult: result.matchResult,
           status: 'completed'
         }
-        setStorage(STORAGE_KEYS.CURRENT_SESSION, updatedSession)
+        storage.set(STORAGE_KEYS.CURRENT_SESSION, updatedSession)
       }
       
-      hideLoading()
+      wxApi.hideLoading()
       return {
         success: true,
         matchResult: result.matchResult,
@@ -150,16 +156,16 @@ const calculateMatchResult = async (sessionId, user2Interests) => {
         getCategoryName: result.getCategoryName
       }
     } else {
-      hideLoading()
-      showError('计算匹配失败')
+      wxApi.hideLoading()
+      wxApi.showError('计算匹配失败')
       return {
         success: false,
         error: result.error
       }
     }
   } catch (error) {
-    hideLoading()
-    console.error('计算匹配失败:', error)
+    wxApi.hideLoading()
+    logger.error('计算匹配失败:', error)
     return {
       success: false,
       error: error.message
@@ -169,12 +175,12 @@ const calculateMatchResult = async (sessionId, user2Interests) => {
 
 // 获取当前会话
 const getCurrentSession = () => {
-  return getStorage(STORAGE_KEYS.CURRENT_SESSION)
+  return storage.get(STORAGE_KEYS.CURRENT_SESSION)
 }
 
 // 清除当前会话
 const clearCurrentSession = () => {
-  removeStorage(STORAGE_KEYS.CURRENT_SESSION)
+  storage.remove(STORAGE_KEYS.CURRENT_SESSION)
 }
 
 // 检查会话是否过期
@@ -210,68 +216,20 @@ const copyShareLink = async (sessionId) => {
   // 创建分享文本
   const shareText = `💌 七夕情侣匹配测试\n\n点击链接，看看你们有多匹配！\n\n小程序路径：${shareInfo.path}`
   
-  return await copyToClipboard(shareText)
+  return await wxApi.copyToClipboard(shareText)
 }
 
 // 保存用户设置
 const saveUserSettings = (settings) => {
-  return setStorage(STORAGE_KEYS.SETTINGS, settings)
+  return storage.set(STORAGE_KEYS.SETTINGS, settings)
 }
 
 // 获取用户设置
 const getUserSettings = () => {
-  return getStorage(STORAGE_KEYS.SETTINGS, {
+  return storage.get(STORAGE_KEYS.SETTINGS, {
     enableNotifications: true,
     autoSave: true,
     theme: 'default'
-  })
-}
-
-// 显示加载提示
-const showLoading = (title = '加载中...') => {
-  wx.showLoading({
-    title,
-    mask: true
-  })
-}
-
-// 隐藏加载提示
-const hideLoading = () => {
-  wx.hideLoading()
-}
-
-// 显示成功提示
-const showSuccess = (title, duration = 2000) => {
-  wx.showToast({
-    title,
-    icon: 'success',
-    duration
-  })
-}
-
-// 显示错误提示
-const showError = (title, duration = 2000) => {
-  wx.showToast({
-    title,
-    icon: 'error',
-    duration
-  })
-}
-
-// 复制到剪贴板
-const copyToClipboard = (data) => {
-  return new Promise((resolve, reject) => {
-    wx.setClipboardData({
-      data: typeof data === 'string' ? data : JSON.stringify(data),
-      success: () => {
-        showSuccess('复制成功')
-        resolve(true)
-      },
-      fail: (error) => {
-        showError('复制失败')
-        reject(error)
-      }
-    })
   })
 }
 
