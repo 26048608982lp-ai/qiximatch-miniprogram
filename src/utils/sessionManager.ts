@@ -123,12 +123,13 @@ class SessionManager {
         // Fix for UTF-8 characters (like Chinese characters)
         const decodedData = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
         console.log('Decoded data:', decodedData);
-        // 验证数据结构
-        if (decodedData.sessionId && decodedData.user1) {
+        
+        // 更灵活的数据验证 - 只要包含基本结构就接受
+        if (decodedData && (decodedData.sessionId || decodedData.user1 || decodedData.user2)) {
           console.log('Data validation passed, returning session data');
           return decodedData;
         } else {
-          console.log('Data validation failed - missing sessionId or user1');
+          console.log('Data validation failed - missing basic session structure');
         }
       } catch (error) {
         console.error('Failed to decode session data:', error);

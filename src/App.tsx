@@ -31,7 +31,16 @@ const App: React.FC = () => {
     if (sessionDataFromUrl) {
       console.log('Found session data from URL, setting state...');
       setSessionData(sessionDataFromUrl);
-      setSessionId(sessionDataFromUrl.sessionId);
+      
+      // 安全地设置sessionId，如果不存在则生成新的
+      if (sessionDataFromUrl.sessionId) {
+        setSessionId(sessionDataFromUrl.sessionId);
+      } else {
+        const newSessionId = SessionManager.generateSessionId();
+        setSessionId(newSessionId);
+        // 更新sessionData中的sessionId
+        sessionDataFromUrl.sessionId = newSessionId;
+      }
       
       if (sessionDataFromUrl.user1 && sessionDataFromUrl.user2) {
         // 两个用户都完成了，显示结果
