@@ -36,7 +36,18 @@ const App: React.FC = () => {
       if (sessionDataFromUrl.user1 && sessionDataFromUrl.user2) {
         // 两个用户都完成了，显示结果
         console.log('Both users completed, showing results...');
-        const result = engine.calculateMatch(sessionDataFromUrl.user1.interests, sessionDataFromUrl.user2.interests);
+        let result;
+        
+        // 如果会话数据中已经有匹配结果，直接使用
+        if (sessionDataFromUrl.matchResult) {
+          console.log('Using pre-calculated match result from URL data');
+          result = sessionDataFromUrl.matchResult;
+        } else {
+          // 否则重新计算匹配结果
+          console.log('Calculating new match result');
+          result = engine.calculateMatch(sessionDataFromUrl.user1.interests, sessionDataFromUrl.user2.interests);
+        }
+        
         setMatchResult(result);
         setUser1Name(sessionDataFromUrl.user1.name);
         setUser2Name(sessionDataFromUrl.user2.name);
@@ -53,7 +64,7 @@ const App: React.FC = () => {
       console.log('No session data found in URL');
     }
     
-    // 检查报告链接
+    // 检查报告链接（向后兼容）
     const reportId = SessionManager.getReportIdFromUrl();
     if (reportId) {
       const savedSession = SessionManager.loadSession();
@@ -163,14 +174,21 @@ const App: React.FC = () => {
   };
 
   const copyResultsLink = async () => {
-    if (!sessionData) return;
+    if (!sessionData || !matchResult) return;
     
-    const reportLink = SessionManager.getReportLink(sessionData.sessionId);
     try {
+      // 将匹配结果添加到会话数据中
+      const sessionDataWithResult = {
+        ...sessionData,
+        matchResult: matchResult
+      };
+      
+      const reportLink = SessionManager.getShareableLinkWithData(sessionDataWithResult);
       await navigator.clipboard.writeText(reportLink);
       alert('结果链接已复制到剪贴板！可以分享给对方查看匹配结果。');
     } catch (err) {
       console.error('Failed to copy: ', err);
+      alert('复制结果链接失败，请手动复制链接');
     }
   };
 
