@@ -68,6 +68,7 @@ The MatchingEngine class implements:
 - Chinese language interface with emoji icons for visual appeal
 - Canvas drawing logic consolidated to avoid React hook dependency issues
 - **Project Structure**: Single React application in `qixi-match/` directory with standard Create React App structure
+- **React Version Compatibility**: Using React 18.3.1 for compatibility with Create React App 5.0.1 (React 19+ may cause blank page issues)
 
 ### Session Management
 - `SessionManager` handles persistent user sessions between both participants
